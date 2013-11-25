@@ -145,6 +145,7 @@ static Image *ReadAnalyzeImage(const ImageInfo *image_info,ExceptionInfo *except
 
   ssize_t
 	count,
+	y_loop,
 	y;
 
   const char
@@ -208,7 +209,29 @@ static Image *ReadAnalyzeImage(const ImageInfo *image_info,ExceptionInfo *except
   length=GetQuantumExtent(canvas_image,quantum_info,quantum_type);
   count=ReadBlob(image,length,pixels);
   number_pixels=GetImageExtent(image);
-  for (y=0; y < (ssize_t) image->extract_info.height; y++)
+  switch ( image_info->orientation )
+  {
+    case TopLeftOrientation:
+    {
+      //printf("Interpreting this orientation as transverse\n");
+    } break;
+    case TopRightOrientation:
+    {
+      //printf("Interpreting this orientation as coronal\n");
+    } break;
+    case BottomRightOrientation:
+    {
+      //printf("Interpreting this orientation as sagittal\n");
+    } break;
+    default: //UndefinedOrientation
+    {
+      printf("Error: Cannot handle this type of orientation\n");
+      ThrowFileException(exception,CorruptImageError,
+        "UnexpectedOrientation", image->filename);
+    }
+  }
+
+  for (y_loop=(ssize_t) image->extract_info.height-1; y_loop--; )
   {
 	register const PixelPacket
 	  *restrict p;
@@ -218,6 +241,15 @@ static Image *ReadAnalyzeImage(const ImageInfo *image_info,ExceptionInfo *except
 
 	register ssize_t
 	  x;
+
+	if (image_info->orientation == TopRightOrientation)
+	{
+		y = (image->extract_info.height - 1) - y_loop;
+	}
+	else
+	{
+		y = y_loop;
+	}
 
 	if (count != (ssize_t) length)
 	  {
