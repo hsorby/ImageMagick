@@ -100,30 +100,8 @@ static Image *ReadAnalyzeImage(const ImageInfo *image_info,ExceptionInfo *except
 	*canvas_image = 0,
 	*image = 0;
 
-  IndexPacket
-	index;
-
   MagickBooleanType
 	status;
-
-  PixelPacket pa[512];
-
-  MagickOffsetType
-	offset,
-	start_position;
-
-  register IndexPacket
-	*indexes;
-
-  register ssize_t
-	i,
-	x;
-
-  QuantumAny
-	range;
-
-  QuantumFormatType
-	quantum_format;
 
   QuantumInfo
 	*quantum_info;
@@ -135,21 +113,12 @@ static Image *ReadAnalyzeImage(const ImageInfo *image_info,ExceptionInfo *except
 	number_pixels;
 
   size_t
-	bit,
-	blue,
-	bytes_per_line,
-	green,
-	length,
-	opacity,
-	red;
+	length;
 
   ssize_t
 	count,
 	y_loop,
 	y;
-
-  const char
-	*value;
 
   unsigned char
 	*pixels;
@@ -187,21 +156,18 @@ static Image *ReadAnalyzeImage(const ImageInfo *image_info,ExceptionInfo *except
 		if ((geometry.height != 0) && (geometry.height < image->rows))
 		  image->rows=geometry.height;
 	}
-  range=GetQuantumRange(image->depth);
   quantum_type=GetQuantumType(image,exception);
-  //quantum_format = FloatingPointQuantumFormat;
   /*
 	Create virtual canvas to support cropping (i.e. image.gray[100x100+10+20]).
   */
   canvas_image=CloneImage(image,image->extract_info.width,1,MagickFalse,
 	exception);
-  //(void) SetImageVirtualPixelMethod(canvas_image,BlackVirtualPixelMethod);
-  quantum_type=GrayQuantum;
+  (void) SetImageVirtualPixelMethod(canvas_image,BlackVirtualPixelMethod);
   quantum_info=AcquireQuantumInfo(image_info,canvas_image);
   if (quantum_info == (QuantumInfo *) NULL)
 	ThrowReaderException(ResourceLimitError,"MemoryAllocationFailed");
-  //SetQuantumFormat(image,quantum_info,UnsignedQuantumFormat);
   pixels=GetQuantumPixels(quantum_info);
+
   if ((image_info->ping != MagickFalse) && (image_info->number_scenes != 0))
   {
 	  printf("here\n");
@@ -211,27 +177,27 @@ static Image *ReadAnalyzeImage(const ImageInfo *image_info,ExceptionInfo *except
   number_pixels=GetImageExtent(image);
   switch ( image_info->orientation )
   {
-    case TopLeftOrientation:
-    {
-      //printf("Interpreting this orientation as transverse\n");
-    } break;
-    case TopRightOrientation:
-    {
-      //printf("Interpreting this orientation as coronal\n");
-    } break;
-    case BottomRightOrientation:
-    {
-      //printf("Interpreting this orientation as sagittal\n");
-    } break;
-    default: //UndefinedOrientation
-    {
-      printf("Error: Cannot handle this type of orientation\n");
-      ThrowFileException(exception,CorruptImageError,
-        "UnexpectedOrientation", image->filename);
-    }
+	case TopLeftOrientation:
+	{
+	  //printf("Interpreting this orientation as transverse\n");
+	} break;
+	case TopRightOrientation:
+	{
+	  //printf("Interpreting this orientation as coronal\n");
+	} break;
+	case BottomRightOrientation:
+	{
+	  //printf("Interpreting this orientation as sagittal\n");
+	} break;
+	default: //UndefinedOrientation
+	{
+	  printf("Error: Cannot handle this type of orientation\n");
+	  ThrowFileException(exception,CorruptImageError,
+		"UnexpectedOrientation", image->filename);
+	}
   }
 
-  for (y_loop=(ssize_t) image->extract_info.height-1; y_loop--; )
+  for (y_loop=(ssize_t) image->extract_info.height; y_loop--; )
   {
 	register const PixelPacket
 	  *restrict p;
@@ -268,15 +234,13 @@ static Image *ReadAnalyzeImage(const ImageInfo *image_info,ExceptionInfo *except
 		((y-image->extract_info.y) < (ssize_t) image->rows))
 	  {
 		p=GetVirtualPixels(canvas_image,canvas_image->extract_info.x,0,
-		  image->columns,1,exception);
+		  canvas_image->columns,1,exception);
 		q=QueueAuthenticPixels(image,0,y-image->extract_info.y,image->columns,
 		  1,exception);
-		//pa = p;
 		if ((p == (const PixelPacket *) NULL) || (q == (PixelPacket *) NULL))
 		  break;
 		for (x=0; x < (ssize_t) image->columns; x++)
 		{
-			pa[x] = *p;
 			SetGrayPixelComponent(q,GetGrayPixelComponent(p));
 			p++;
 			q++;
